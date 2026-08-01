@@ -13,7 +13,6 @@ synced via Dropbox, iCloud, or Syncthing — and pulls it everywhere else.
   and refused.
 - **Audit log** — every mutation is recorded in append-only JSONL.
 - **TUI** — bubbletea-based snapshot browser and diff view.
-- **Static binary** — single static Go binary; cross-platform via GoReleaser.
 
 ## Install
 
@@ -29,9 +28,6 @@ cd omp-sync
 make build
 ./bin/omp-sync --help
 ```
-
-Pre-built binaries (Linux, macOS, Windows on amd64 and arm64) are published with every
-release.
 
 ## Usage
 
