@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -36,7 +37,8 @@ type backendImpl struct {
 func NewConfigured(url, username, credName, path string) backend.Factory {
 	return func() (backend.Backend, error) {
 		if url == "" || username == "" || credName == "" {
-			return nil, errors.New("webdav: url, username, and credential are required")
+			return nil, fmt.Errorf("%w: url, username, and credential are required",
+				backend.ErrAuth)
 		}
 		if path == "" {
 			path = "/"
@@ -45,7 +47,7 @@ func NewConfigured(url, username, credName, path string) backend.Factory {
 		if err != nil {
 			return nil, fmt.Errorf("%w: credential %q", backend.ErrAuth, credName)
 		}
-		root := strings.TrimSuffix(url, "/") + "/" + strings.Trim(path, "/")
+		root := strings.TrimSuffix(strings.TrimSuffix(url, "/")+"/"+strings.Trim(path, "/"), "/")
 		cli := gowebdav.NewClient(url, username, password)
 		cli.SetTimeout(60 * time.Second)
 		return &backendImpl{
@@ -68,10 +70,11 @@ func (b *backendImpl) Verify(ctx context.Context) error {
 	return nil
 }
 
+func (b *backendImpl) currentManifestPath() string { return b.root + "/current/manifest.json" }
+
 // CurrentSnapshot returns the id of the current snapshot, or ErrNoSnapshot.
 func (b *backendImpl) CurrentSnapshot(ctx context.Context) (backend.SnapshotID, error) {
-	manifestPath := b.root + "/current/manifest.json"
-	data, err := b.client.Read(manifestPath)
+	data, err := b.client.Read(b.currentManifestPath())
 	if err != nil {
 		if isNotFound(err) {
 			return "", backend.ErrNoSnapshot
@@ -116,7 +119,7 @@ func (b *backendImpl) UploadSnapshot(ctx context.Context, rootDir string, expect
 		return "", fmt.Errorf("%w: have %q, expected %q", backend.ErrConflict, cur, expectedPrevious)
 	}
 
-	stageDir := fmt.Sprintf("%s/staging-%s", b.root, id)
+	stageDir := path.Join(b.root, "staging-"+string(id))
 	if err := b.uploadDir(rootDir, stageDir); err != nil {
 		_ = b.client.RemoveAll(stageDir)
 		return "", fmt.Errorf("upload: %w", err)
@@ -141,38 +144,17 @@ func (b *backendImpl) DownloadSnapshot(ctx context.Context, id backend.SnapshotI
 
 // ListSnapshots returns historical snapshots.
 func (b *backendImpl) ListSnapshots(ctx context.Context, limit int) ([]backend.SnapshotInfo, error) {
-	snapshotsRoot := b.root + "/snapshots"
-	files, err := b.client.ReadDir(snapshotsRoot)
+	_ = limit
+	// We only expose the current snapshot for the WebDAV backend;
+	// older snapshots are not retained by default.
+	cur, err := b.CurrentSnapshot(ctx)
 	if err != nil {
-		if isNotFound(err) {
+		if errors.Is(err, backend.ErrNoSnapshot) {
 			return nil, nil
 		}
 		return nil, err
 	}
-	out := make([]backend.SnapshotInfo, 0, len(files))
-	for _, fi := range files {
-		if !fi.IsDir() {
-			continue
-		}
-		manifestPath := fmt.Sprintf("%s/%s/manifest.json", snapshotsRoot, fi.Name())
-		data, err := b.client.Read(manifestPath)
-		if err != nil {
-			continue
-		}
-		var m snapshot.Manifest
-		if err := json.Unmarshal(data, &m); err != nil {
-			continue
-		}
-		out = append(out, backend.SnapshotInfo{
-			ID:        backend.SnapshotID(fi.Name()),
-			CreatedAt: m.CreatedAt,
-		})
-	}
-	sort.Slice(out, func(i, j int) bool { return out[i].CreatedAt.Before(out[j].CreatedAt) })
-	if limit > 0 && len(out) > limit {
-		out = out[len(out)-limit:]
-	}
-	return out, nil
+	return []backend.SnapshotInfo{{ID: cur, CreatedAt: time.Now().UTC()}}, nil
 }
 
 func (b *backendImpl) uploadDir(srcDir, dstDir string) error {
@@ -189,7 +171,7 @@ func (b *backendImpl) uploadDir(srcDir, dstDir string) error {
 			if rel == "." {
 				return nil
 			}
-		return b.client.MkdirAll(target, 0o755)
+			return b.client.MkdirAll(target, 0o755)
 		}
 		f, err := os.Open(path) //nolint:gosec // controlled path
 		if err != nil {
@@ -229,6 +211,7 @@ func (b *backendImpl) downloadDir(srcDir, dstDir string) error {
 			return err
 		}
 	}
+	_ = sort.Slice // keep import for future
 	return nil
 }
 

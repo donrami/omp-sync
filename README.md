@@ -85,17 +85,19 @@ invocation; comma-separated glob patterns matching `bmatcuk/doublestar/v4` synta
 
 Download the current snapshot from the backend and apply it to the local omp config.
 By default, refuses to overwrite locally-modified files (FR-009 + US3/AC3); pass
-`--force` to override after backing up.
+`--force` to overwrite. `--include` and `--exclude` narrow the files that are
+applied for this invocation (config patterns are used otherwise).
 
 #### `omp-sync status [--json]`
 
 Compare the local config to the current remote snapshot and report per-file drift
 (local only, remote only, modified). Exits 0 regardless of drift.
 
-#### `omp-sync diff [--path=<relpath>] [--json]`
+#### `omp-sync diff [--path=<glob>] [--json]`
 
-Print line-level diffs between local files and the remote snapshot. `--path` restricts
-the output to a single file.
+Print line-level diffs between local files and the remote snapshot. `--path`
+restricts the output to one or more relative paths (doublestar globs, repeatable).
+`--json` emits the machine-readable diff object.
 
 #### `omp-sync config`
 
@@ -103,7 +105,7 @@ Subcommands:
 
 - `config list`  — print the resolved configuration as TOML.
 - `config get <key>`  — print a single configuration value (`backend` or `omp_dir`).
-- `config set credential <name>`  — store a credential in the OS keyring.
+- `config set credential <name> [--value=<secret>]`  — store a credential in the OS keyring; the value is read from `--value` or from stdin.
 - `config schema`  — print the JSON schema for `config.toml`.
 
 ## Configuration
@@ -149,8 +151,11 @@ Credentials are never stored in the config file. Two lookup paths are tried, in 
 Store a credential with:
 
 ```bash
+# read the secret from stdin
 omp-sync config set credential webdav_password
-# ... type the password on stdin or use --value
+
+# or pass it directly
+omp-sync config set credential webdav_password --value 's3cret'
 ```
 
 ## Output

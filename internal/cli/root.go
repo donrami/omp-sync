@@ -72,6 +72,7 @@ func NewRootCmd() *cobra.Command {
 		newPullCmd(),
 		newStatusCmd(),
 		newDiffCmd(),
+		newVersionCmd(),
 		newConfigCmd(),
 		newTUICmd(),
 	)

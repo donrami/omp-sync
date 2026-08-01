@@ -9,9 +9,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
-
 	"sort"
 	"strings"
 	"time"
@@ -22,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/plumbing/transport"
 	"github.com/go-git/go-git/v5/plumbing/transport/http"
 )
 
@@ -39,7 +40,7 @@ type backendImpl struct {
 func NewConfigured(repo, branch, credName, authorName, authorEmail string) backend.Factory {
 	return func() (backend.Backend, error) {
 		if repo == "" || credName == "" {
-			return nil, errors.New("github: repo and credential are required")
+			return nil, fmt.Errorf("%w: repo and credential are required", backend.ErrAuth)
 		}
 		if branch == "" {
 			branch = "main"
@@ -68,8 +69,7 @@ func (b *backendImpl) Name() string { return "github" }
 
 // Verify clones the repo shallow and confirms it is reachable.
 func (b *backendImpl) Verify(ctx context.Context) error {
-	_, err := b.openOrClone()
-	if err != nil {
+	if _, err := b.openOrClone(); err != nil {
 		return fmt.Errorf("%w: %v", backend.ErrUnreachable, err)
 	}
 	return nil
@@ -83,7 +83,7 @@ func (b *backendImpl) CurrentSnapshot(ctx context.Context) (backend.SnapshotID, 
 	}
 	head, err := repo.Head()
 	if err != nil {
-		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		if errors.Is(err, plumbing.ErrReferenceNotFound) || errors.Is(err, transport.ErrEmptyRemoteRepository) {
 			return "", backend.ErrNoSnapshot
 		}
 		return "", fmt.Errorf("%w: %v", backend.ErrUnreachable, err)
@@ -148,6 +148,9 @@ func (b *backendImpl) UploadSnapshot(ctx context.Context, rootDir string, expect
 		if err != nil {
 			return err
 		}
+		if rel == ".git" || strings.HasPrefix(rel, ".git"+string(os.PathSeparator)) {
+			return nil
+		}
 		if info.IsDir() {
 			_, err := w.Add(rel)
 			return err
@@ -192,7 +195,7 @@ func (b *backendImpl) DownloadSnapshot(ctx context.Context, id backend.SnapshotI
 		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 			return err
 		}
-		mode := os.FileMode(f.Mode)
+		mode := f.Mode
 		if mode == 0 {
 			mode = 0o644
 		}
@@ -202,11 +205,10 @@ func (b *backendImpl) DownloadSnapshot(ctx context.Context, id backend.SnapshotI
 		}
 		defer reader.Close()
 		buf := make([]byte, f.Size)
-		_, err = reader.Read(buf)
-		if err != nil {
+		if _, err := io.ReadFull(reader, buf); err != nil {
 			return err
 		}
-		return os.WriteFile(target, buf, mode)
+		return os.WriteFile(target, buf, os.FileMode(mode))
 	})
 }
 
@@ -218,7 +220,7 @@ func (b *backendImpl) ListSnapshots(ctx context.Context, limit int) ([]backend.S
 	}
 	head, err := repo.Head()
 	if err != nil {
-		if errors.Is(err, plumbing.ErrReferenceNotFound) {
+		if errors.Is(err, plumbing.ErrReferenceNotFound) || errors.Is(err, transport.ErrEmptyRemoteRepository) {
 			return nil, nil
 		}
 		return nil, err
@@ -246,6 +248,11 @@ func (b *backendImpl) ListSnapshots(ctx context.Context, limit int) ([]backend.S
 	return out, nil
 }
 
+// openOrClone returns an open repository, cloning shallow if needed.
+// If the remote repository is empty (newly created, no commits), the
+// returned *gogit.Repository is local-only — HEAD operations will
+// surface errors that callers (CurrentSnapshot, ListSnapshots) catch
+// and report as backend.ErrNoSnapshot.
 func (b *backendImpl) openOrClone() (*gogit.Repository, error) {
 	if b.repo == "" {
 		return nil, errors.New("github backend not configured")
@@ -260,15 +267,34 @@ func (b *backendImpl) openOrClone() (*gogit.Repository, error) {
 	if _, err := os.Stat(filepath.Join(b.workDir, ".git")); err == nil {
 		return gogit.PlainOpen(b.workDir)
 	}
-	opts := &gogit.CloneOptions{
-		URL:        b.repo,
-		RemoteName: "origin",
-		Auth:       b.auth(),
-	}
 	if err := os.MkdirAll(b.workDir, 0o755); err != nil {
 		return nil, err
 	}
-	return gogit.PlainClone(b.workDir, false, opts)
+	repo, err := gogit.PlainClone(b.workDir, false, &gogit.CloneOptions{
+		URL:        b.repo,
+		RemoteName: "origin",
+		Auth:       b.auth(),
+	})
+	if err == nil {
+		return repo, nil
+	}
+	// If the remote is empty (no commits), init a local repo and
+	// register the remote — calls will see no HEAD and surface
+	// ErrNoSnapshot themselves.
+	if errors.Is(err, transport.ErrEmptyRemoteRepository) {
+		repo, ierr := gogit.PlainInit(b.workDir, false)
+		if ierr != nil {
+			return nil, fmt.Errorf("init after empty remote: %w", ierr)
+		}
+		if _, rerr := repo.CreateRemote(&config.RemoteConfig{
+			Name: "origin",
+			URLs: []string{b.repo},
+		}); rerr != nil {
+			return nil, fmt.Errorf("create remote: %w", rerr)
+		}
+		return repo, nil
+	}
+	return nil, err
 }
 
 func (b *backendImpl) push(repo *gogit.Repository) error {
@@ -276,7 +302,15 @@ func (b *backendImpl) push(repo *gogit.Repository) error {
 	if err != nil {
 		return err
 	}
-	refSpec := config.RefSpec(fmt.Sprintf("+refs/heads/%s:refs/heads/%s", b.branch, b.branch))
+	// Derive the local branch from HEAD so the refspec matches the
+	// branch the commit landed on (PlainInit defaults to master unless
+	// the config overrides it; the config branch may differ).
+	localBranch := "refs/heads/" + b.branch
+	head, err := repo.Head()
+	if err == nil && head.Name().IsBranch() {
+		localBranch = head.Name().String()
+	}
+	refSpec := config.RefSpec(fmt.Sprintf("+%s:refs/heads/%s", localBranch, b.branch))
 	if err := remote.Push(&gogit.PushOptions{
 		RemoteName: "origin",
 		RefSpecs:   []config.RefSpec{refSpec},

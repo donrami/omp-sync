@@ -1,8 +1,11 @@
 package cli
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/donrami/omp-sync/internal/config"
 	"github.com/donrami/omp-sync/internal/credentials"
@@ -48,14 +51,19 @@ func newConfigGetCmd() *cobra.Command {
 }
 
 func newConfigSetCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "set <key> <value>",
-		Short: "Set a credential (other keys must be edited in the config file)",
-		Args:  cobra.ExactArgs(2),
+	var valueFlag string
+	cmd := &cobra.Command{
+		Use:   "set credential <name>",
+		Short: "Store a credential in the OS keyring",
+		Long: "Stores a secret under <name>. The value is read from --value if " +
+			"provided, otherwise from stdin (one line).",
+		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return runConfigSet(cmd, args[0], args[1])
+			return runConfigSet(cmd, args[0], args[1], valueFlag)
 		},
 	}
+	cmd.Flags().StringVar(&valueFlag, "value", "", "credential value (else read from stdin)")
+	return cmd
 }
 
 func newConfigSchemaCmd() *cobra.Command {
@@ -100,15 +108,53 @@ func runConfigGet(cmd *cobra.Command, key string) error {
 	return nil
 }
 
-func runConfigSet(cmd *cobra.Command, key, value string) error {
-	if key == "credential" {
-		if err := credentials.Store(value, value); err != nil {
-			return exitErr(ExitGeneric, fmt.Errorf("store credential: %w", err))
-		}
-		fmt.Fprintf(cmd.OutOrStdout(), "stored credential %q in keyring\n", value)
-		return nil
+// runConfigSet stores a credential. args[0] is the literal subcommand name
+// ("credential"); args[1] is the credential name; the secret is read from
+// --value (preferred) or from stdin.
+func runConfigSet(cmd *cobra.Command, key, name, valueFlag string) error {
+	if key != "credential" {
+		return exitErr(ExitUsage, fmt.Errorf("only `set credential` is supported (got `set %s`); edit %s manually", key, globalFlags.ConfigPath))
 	}
-	return exitErr(ExitUsage, fmt.Errorf("only `credential` is settable via this command; edit %s manually", globalFlags.ConfigPath))
+	if name == "" {
+		return exitErr(ExitUsage, fmt.Errorf("credential name is required"))
+	}
+
+	value, err := resolveCredentialValue(cmd, valueFlag)
+	if err != nil {
+		return exitErr(ExitGeneric, err)
+	}
+	if value == "" {
+		return exitErr(ExitUsage, fmt.Errorf("credential value is empty; provide via --value or stdin"))
+	}
+
+	if err := credentials.Store(name, value); err != nil {
+		return exitErr(ExitGeneric, fmt.Errorf("store credential: %w", err))
+	}
+	fmt.Fprintf(cmd.OutOrStdout(), "stored credential %q in keyring\n", name)
+	return nil
+}
+
+// resolveCredentialValue returns the secret from --value (preferred)
+// or by reading one line from stdin.
+func resolveCredentialValue(cmd *cobra.Command, valueFlag string) (string, error) {
+	if valueFlag != "" {
+		return valueFlag, nil
+	}
+	stat, err := os.Stdin.Stat()
+	if err != nil {
+		return "", fmt.Errorf("stat stdin: %w", err)
+	}
+	if (stat.Mode() & os.ModeCharDevice) != 0 {
+		fmt.Fprintln(cmd.ErrOrStderr(), "Enter credential value (stdin):")
+	}
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return "", fmt.Errorf("read stdin: %w", err)
+		}
+		return "", errors.New("no credential value provided")
+	}
+	return strings.TrimRight(scanner.Text(), "\r\n"), nil
 }
 
 func runConfigSchema(cmd *cobra.Command) error {
