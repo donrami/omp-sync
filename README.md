@@ -1,6 +1,6 @@
 # omp-sync
 
-Centralize and synchronize your [oh-my-pi (omp)](https://github.com/oh-my-pi) settings
+Centralize and synchronize your [oh-my-pi (omp)](https://github.com/can1357/oh-my-pi) settings
 across devices. `omp-sync` is a CLI-first (with optional TUI) tool that pushes your
 selected `omp` config to a backend of your choice — WebDAV, GitHub, or any local folder
 synced via Dropbox, iCloud, or Syncthing — and pulls it everywhere else.
