@@ -1,0 +1,58 @@
+version: 2
+
+project_name: omp-sync
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: omp-sync
+    main: ./cmd/omp-sync
+    binary: omp-sync
+    ldflags:
+      - -s -w -X github.com/example/omp-sync/internal/version.Version={{ .Version }}
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+
+archives:
+  - id: default
+    formats:
+      - tar.gz
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}'
+
+nfpms:
+  - id: packages
+    package_name: omp-sync
+    file_name_template: '{{ .ConventionalFileName }}'
+    formats:
+      - deb
+      - rpm
+    maintainer: omp-sync maintainers <omp-sync@example.com>
+    description: Centralize your omp config across devices.
+    license: MIT
+    section: utils
+
+brews:
+  - name: omp-sync
+    repository:
+      owner: example
+      name: homebrew-tap
+    description: Centralize your omp config across devices.
+    homepage: https://github.com/example/omp-sync
+    license: MIT
+    install: |
+      bin.install "omp-sync"
+
+release:
+  github:
+    owner: example
+    name: omp-sync
+  prerelease: auto

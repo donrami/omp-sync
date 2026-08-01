@@ -1,0 +1,41 @@
+services:
+  webdav:
+    image: bytemark/webdav:latest
+    container_name: omp-sync-webdav
+    ports:
+      - "18080:80"
+    environment:
+      AUTH_TYPE: Basic
+      USERNAME: alice
+      PASSWORD: secret
+    volumes:
+      - webdav-data:/var/lib/dav
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  fakegit:
+    image: alpine/git:latest
+    container_name: omp-sync-fakegit
+    ports:
+      - "19418:9418"
+    volumes:
+      - ./fixtures/remote.git:/srv/git
+    command:
+      - git
+      - daemon
+      - --reuseaddr
+      - --export-all
+      - --enable=receive-pack
+      - --port=9418
+      - /srv/git
+    healthcheck:
+      test: ["CMD", "git", "ls-remote", "git://localhost:9418/srv/git/test.git"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  webdav-data:
