@@ -113,7 +113,6 @@ Subcommands:
 ## Configuration
 
 `~/.config/omp-sync/config.toml` (overridable via `--config` or `OMP_SYNC_CONFIG`).
-See `specs/001-omp-settings-sync/data-model.md` for the full schema.
 
 A WebDAV config:
 
@@ -194,7 +193,7 @@ Three built-in backends ship with the binary:
 - **`github`** — git repository over HTTPS with a personal access token; each snapshot
   is a single commit on the configured branch.
 
-Plugin contract: see `specs/001-omp-settings-sync/contracts/backend.md`. Third-party
+Plugin contract: third-party
 backends are discovered from `$XDG_CONFIG_HOME/omp-sync/plugins/*.so` (Unix) or from
 executables on `$PATH` named `omp-sync-backend-<name>`.
 
