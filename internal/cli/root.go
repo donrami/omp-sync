@@ -10,12 +10,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/example/omp-sync/internal/audit"
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/config"
-	"github.com/example/omp-sync/internal/omp"
-	"github.com/example/omp-sync/internal/version"
-	"github.com/example/omp-sync/internal/sync"
+	"github.com/donrami/omp-sync/internal/audit"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/config"
+	"github.com/donrami/omp-sync/internal/omp"
+	"github.com/donrami/omp-sync/internal/version"
+	"github.com/donrami/omp-sync/internal/sync"
 	"github.com/spf13/cobra"
 )
 

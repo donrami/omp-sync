@@ -1,4 +1,4 @@
-module github.com/example/omp-sync
+module github.com/donrami/omp-sync
 
 go 1.26.5
 

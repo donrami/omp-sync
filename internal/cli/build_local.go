@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/backends/local"
-	"github.com/example/omp-sync/internal/config"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/backends/local"
+	"github.com/donrami/omp-sync/internal/config"
 )
 
 func init() {

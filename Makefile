@@ -2,7 +2,7 @@ SHELL := /bin/bash
 BINARY := omp-sync
 DIST := dist
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS := -s -w -X github.com/example/omp-sync/internal/version.Version=$(VERSION)
+LDFLAGS := -s -w -X github.com/donrami/omp-sync/internal/version.Version=$(VERSION)
 
 .PHONY: all build test test-unit test-integration lint clean run release help
 

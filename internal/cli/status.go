@@ -8,8 +8,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/example/omp-sync/internal/snapshot"
-	"github.com/example/omp-sync/internal/sync"
+	"github.com/donrami/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/sync"
 	"github.com/spf13/cobra"
 )
 

@@ -16,8 +16,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/credentials"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/credentials"
 	gogit "github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/config"
 	"github.com/go-git/go-git/v5/plumbing"

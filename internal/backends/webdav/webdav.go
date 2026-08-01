@@ -18,9 +18,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/credentials"
-	"github.com/example/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/credentials"
+	"github.com/donrami/omp-sync/internal/snapshot"
 	"github.com/studio-b12/gowebdav"
 )
 

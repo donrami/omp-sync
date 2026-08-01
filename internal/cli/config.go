@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/example/omp-sync/internal/config"
-	"github.com/example/omp-sync/internal/credentials"
+	"github.com/donrami/omp-sync/internal/config"
+	"github.com/donrami/omp-sync/internal/credentials"
 	"github.com/spf13/cobra"
 )
 

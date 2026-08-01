@@ -26,9 +26,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/example/omp-sync/internal/atomic"
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/atomic"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/snapshot"
 )
 
 // backendImpl is the local-filesystem backend.

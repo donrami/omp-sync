@@ -14,7 +14,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/example/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/snapshot"
 )
 
 // Sentinel errors. Backends return these; the engine maps them to messages.

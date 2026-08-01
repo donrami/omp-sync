@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/tui"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/tui"
 	"github.com/spf13/cobra"
 )
 

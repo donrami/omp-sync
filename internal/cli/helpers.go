@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/example/omp-sync/internal/config"
+	"github.com/donrami/omp-sync/internal/config"
 )
 
 // exitErr wraps err in an *exitCodeError with the supplied code.

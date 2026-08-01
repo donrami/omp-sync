@@ -9,7 +9,7 @@ import (
 
 	tea "charm.land/bubbletea/v2"
 
-	"github.com/example/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/backend"
 )
 
 type stubBackend struct {

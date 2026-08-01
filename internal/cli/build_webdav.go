@@ -3,9 +3,9 @@ package cli
 import (
 	"fmt"
 
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/backends/webdav"
-	"github.com/example/omp-sync/internal/config"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/backends/webdav"
+	"github.com/donrami/omp-sync/internal/config"
 )
 
 func init() {

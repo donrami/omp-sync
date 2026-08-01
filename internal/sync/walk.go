@@ -13,8 +13,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/example/omp-sync/internal/filter"
-	"github.com/example/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/filter"
+	"github.com/donrami/omp-sync/internal/snapshot"
 )
 
 // LocalSnapshot is a snapshot of the local config tree, ready to be

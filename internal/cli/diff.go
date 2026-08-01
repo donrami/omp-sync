@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/example/omp-sync/internal/sync"
+	"github.com/donrami/omp-sync/internal/sync"
 	"github.com/spf13/cobra"
 )
 

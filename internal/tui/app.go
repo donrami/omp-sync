@@ -17,7 +17,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/example/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/backend"
 	tea "charm.land/bubbletea/v2"
 )
 

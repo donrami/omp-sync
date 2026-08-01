@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/example/omp-sync/internal/filter"
+	"github.com/donrami/omp-sync/internal/filter"
 	"github.com/pelletier/go-toml/v2"
 )
 

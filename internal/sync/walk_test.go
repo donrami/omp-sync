@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/example/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/snapshot"
 )
 
 func TestWalk_BasicFiles(t *testing.T) {

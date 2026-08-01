@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/example/omp-sync/internal/cli"
-	"github.com/example/omp-sync/internal/version"
+	"github.com/donrami/omp-sync/internal/cli"
+	"github.com/donrami/omp-sync/internal/version"
 )
 
 func main() {

@@ -9,11 +9,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/example/omp-sync/internal/audit"
-	"github.com/example/omp-sync/internal/backend"
-	"github.com/example/omp-sync/internal/snapshot"
-	"github.com/example/omp-sync/internal/sync"
-	"github.com/example/omp-sync/internal/version"
+	"github.com/donrami/omp-sync/internal/audit"
+	"github.com/donrami/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/snapshot"
+	"github.com/donrami/omp-sync/internal/sync"
+	"github.com/donrami/omp-sync/internal/version"
 	"github.com/spf13/cobra"
 )
 

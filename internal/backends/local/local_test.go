@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/example/omp-sync/internal/backend"
+	"github.com/donrami/omp-sync/internal/backend"
 )
 
 func TestLocalBackend_RoundTrip(t *testing.T) {

@@ -18,13 +18,13 @@ synced via Dropbox, iCloud, or Syncthing — and pulls it everywhere else.
 ## Install
 
 ```bash
-go install github.com/example/omp-sync/cmd/omp-sync@latest
+go install github.com/donrami/omp-sync/cmd/omp-sync@latest
 ```
 
 Or build from source:
 
 ```bash
-git clone https://github.com/example/omp-sync
+git clone https://github.com/donrami/omp-sync
 cd omp-sync
 make build
 ./bin/omp-sync --help
@@ -33,10 +33,9 @@ make build
 Pre-built binaries (Linux, macOS, Windows on amd64 and arm64) are published with every
 release.
 
-## Quickstart
+## Usage
 
-The full runnable guide is at `specs/001-omp-settings-sync/quickstart.md`. The shortest
-happy path:
+The shortest happy path:
 
 ```bash
 # 1. Configure a backend
